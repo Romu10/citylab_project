@@ -82,10 +82,21 @@ class Patrol : public rclcpp::Node {
             }
 
             // Check if a close obstacle was detected (within 0.5 meters).
-            if (min_range <= 0.3) {
+            if (min_range <= 0.42) {
+                
                 // Calculate the opposite direction to move away from obstacles.
-                opposite_direction_ = min_range_angle + M_PI;
-                direction_ = opposite_direction_;
+                //opposite_direction_ = min_range_angle;
+                //direction_ = opposite_direction_;
+                direction_ = min_range_angle;
+
+                // Determine whether to rotate left or right based on the angle.
+                if (min_range_angle >= 0.0) {
+                    // Rotate to the left.
+                    direction_ -= M_PI / 1.3;
+                } else {
+                    // Rotate to the right.
+                    direction_ += M_PI / 1.3;
+                }
             }
             else{
                 opposite_direction_ = 0.00;
