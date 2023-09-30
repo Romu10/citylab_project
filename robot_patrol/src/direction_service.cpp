@@ -4,13 +4,14 @@
 
 // Service 
 #include "std_srvs/srv/empty.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "robot_patrol/srv/get_direction.hpp"
 
 // Message
 #include "geometry_msgs/msg/twist.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 
-using Empty = std_srvs::srv::Empty;
+using SetBool = std_srvs::srv::SetBool;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -21,7 +22,7 @@ public:
   : Node("direction_service")
   {
 
-    srv_ = create_service<Empty>("moving", std::bind(&DirectionService::moving_callback, this, _1, _2));
+    srv_ = create_service<SetBool>("moving", std::bind(&DirectionService::moving_callback, this, _1, _2));
     
     // Cmd_Vel PUB
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -35,7 +36,7 @@ public:
 
         subscription1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         "/scan", 10,
-        std::bind(&Patrol::Laser_callback, this, std::placeholders::_1),
+        std::bind(&DirectionService::Laser_callback, this, std::placeholders::_1),
         options1);
 
   }
@@ -43,18 +44,42 @@ public:
 private:
 
     // Service stuff
-    rclcpp::Service<Empty>::SharedPtr srv_;
+    rclcpp::Service<SetBool>::SharedPtr srv_;
 
     void moving_callback(
-      const std::shared_ptr<Empty::Request> request,
-      const std::shared_ptr<Empty::Response>
+      const std::shared_ptr<SetBool::Request> request,
+      const std::shared_ptr<SetBool::Response>
           response) 
     {
 
         auto message = geometry_msgs::msg::Twist();
-        message.linear.x = 0.2;
-        message.angular.z = 0.2;
-        publisher_->publish(message);
+    
+        if (request->data == true)
+        {   
+            // Send velocities to move the robot to the right
+            message.linear.x = 0.2;
+            message.angular.z = -0.2;
+            publisher_->publish(message);
+
+            // Set the response success variable to true
+            response->success = true;
+            // Set the response message variable to a string
+            response->message = "Turning to the right right right!";
+        }
+
+        if (request->data == false)
+        {
+            // Send velocities to stop the robot
+            message.linear.x = 0.0;
+            message.angular.z = 0.0;
+            publisher_->publish(message);
+
+            // Set the response success variable to false
+            response->success = false;
+            // Set the response message variable to a string
+            response->message = "It is time to stop!"; 
+        }    
+                
     }
 
     // Laser Sub stuff
@@ -123,9 +148,9 @@ private:
     // Member Variables
     std::list<float> laser_ranges_;
     float direction_;
-    float total_dist_sec_right = 0.0;
-    float total_dist_sec_front = 0.0;
-    float total_dist_sec_left = 0.0;
+    float total_dist_sec_right = 0.00;
+    float total_dist_sec_front = 0.00;
+    float total_dist_sec_left = 0.00;
     float opposite_direction_ = 0.00;
 
 };
