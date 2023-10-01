@@ -7,9 +7,9 @@
 // Service 
 #include "custom_interfaces/srv/get_direction.hpp"
 
-
 // Message
 #include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 // Custom Interface
 using GetDirection = custom_interfaces::srv::GetDirection;
@@ -28,7 +28,7 @@ public:
   {
 
     // Service Server
-        srv_ = create_service<GetDirection>("moving", std::bind(&DirectionService::moving_callback, this, _1, _2));
+        srv_ = create_service<GetDirection>("moving", std::bind(&DirectionService::direction_callback, this, _1, _2));
         
     // Cmd_Vel PUB
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -63,7 +63,7 @@ private:
     // Angle per section
     const float angle_per_section = (M_PI/3.0);
 
-    void moving_callback(
+    void direction_callback(
       const std::shared_ptr<GetDirection::Request> request,
       const std::shared_ptr<GetDirection::Response> response) 
     {
