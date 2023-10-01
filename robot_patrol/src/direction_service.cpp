@@ -102,14 +102,58 @@ private:
         
         }
 
+        // Calculate average distances in each section
+        std::vector<float> average_distances(num_sections);
+        for (int i = 0; i < num_sections; ++i) {
+            float sum = 0.0;
+            for (const float& distance : divided_laser_data[i]) {
+                sum += distance;
+                }
+                if (!divided_laser_data[i].empty()) {
+                    average_distances[i] = sum / divided_laser_data[i].size();
+                } else {
+                    average_distances[i] = 0.0;  // No data in this section
+                }
+        }
+
+        // Determine which side has the farthest object
+        int farthest_side = 0;  // Initialize to the first section
+        for (int i = 1; i < num_sections; ++i) {
+            if (average_distances[i] > average_distances[farthest_side]) {
+                farthest_side = i;
+            }
+        }
+
+        // Set the response direction based on the farthest side
+        if (farthest_side == 0) {
+                response->direction = "Right";
+            } else if (farthest_side == 1) {
+                response->direction = "Front";
+            } else {
+                response->direction = "Left";
+        }
+        
+
+        // Total Laser Scan Received Data 
         RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", number_of_rays_received);
+        
+        // Total Laser Scan Received Data from Right 
         int number_of_rays_received_right = divided_laser_data[1].size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received Right: %i", number_of_rays_received_right);
-        response->direction = "Left";
-                
+        
+        // Total Laser Scan Received Data from Front
+        int number_of_rays_received_front = divided_laser_data[2].size();
+        RCLCPP_INFO(this->get_logger(), "Total Laser Received Front: %i", number_of_rays_received_front);
+        
+        // Total Laser Scan Received Data from Left
+        int number_of_rays_received_left = divided_laser_data[3].size();
+        RCLCPP_INFO(this->get_logger(), "Total Laser Received Left: %i", number_of_rays_received_left);
+
     }
 
 };
+
+
 
 int main(int argc, char * argv[])
 {
