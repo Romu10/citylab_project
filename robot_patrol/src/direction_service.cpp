@@ -28,7 +28,7 @@ public:
   {
 
     // Service Server
-        srv_ = create_service<GetDirection>("moving", std::bind(&DirectionService::direction_callback, this, _1, _2));
+        srv_ = create_service<GetDirection>("direction_service", std::bind(&DirectionService::direction_callback, this, _1, _2));
         
     // Cmd_Vel PUB
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -138,15 +138,15 @@ private:
         RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", number_of_rays_received);
         
         // Total Laser Scan Received Data from Right 
-        int number_of_rays_received_right = divided_laser_data[1].size();
+        int number_of_rays_received_right = divided_laser_data[0].size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received Right: %i", number_of_rays_received_right);
         
         // Total Laser Scan Received Data from Front
-        int number_of_rays_received_front = divided_laser_data[2].size();
+        int number_of_rays_received_front = divided_laser_data[1].size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received Front: %i", number_of_rays_received_front);
         
         // Total Laser Scan Received Data from Left
-        int number_of_rays_received_left = divided_laser_data[3].size();
+        int number_of_rays_received_left = divided_laser_data[2].size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received Left: %i", number_of_rays_received_left);
 
     }
