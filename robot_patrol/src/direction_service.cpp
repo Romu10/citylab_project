@@ -102,9 +102,9 @@ private:
         
         }
 
+        RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", number_of_rays_received);
         int number_of_rays_received_right = divided_laser_data[1].size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received Right: %i", number_of_rays_received_right);
-
         response->direction = "Left";
                 
     }
