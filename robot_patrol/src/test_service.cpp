@@ -54,11 +54,7 @@ public:
             options1);
 
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service Client Ready");
-        /*
-        if (!received_laser_scan.ranges.empty()) {
-            Service_Client();
-        }
-        */
+
     }
 
 private:
@@ -72,8 +68,20 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription1_;
     rclcpp::CallbackGroup::SharedPtr laser_callback_group_;
 
+    // Variables
+    bool laser_callback_executed;
+
     // CallBack Laser Sub
     void Laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+        
+        // Verify
+        if (laser_callback_executed) {
+            return; // exit if executed
+        }
+
+        // Marcar como ejecutado
+        laser_callback_executed = true;
+
         // Message received
         int range_total = msg->ranges.size();
         RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", range_total);
@@ -90,25 +98,6 @@ private:
 
     }
 
-    /*
-    void Service_Client() {
-
-        if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) ==
-            rclcpp::FutureReturnCode::SUCCESS) {
-            auto result = result_future.get();
-            if (result->direction == "Left") {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned success");
-            }
-            else if (result->direction == "Right") {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Right");
-            }
-        }
-        else {
-            RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service /moving");
-        }
-    return;
-    }
-    */
 };
 
 int main(int argc, char* argv[]) {
