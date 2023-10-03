@@ -45,10 +45,14 @@ ament_target_dependencies(service_server_node rclcpp geometry_msgs std_msgs cust
 add_executable(service_test_node src/test_service.cpp)
 ament_target_dependencies(service_test_node rclcpp std_msgs custom_interfaces sensor_msgs)
 
+add_executable(patrolling_node src/patrol_with_service.cpp)
+ament_target_dependencies(patrolling_node rclcpp std_msgs custom_interfaces sensor_msgs geometry_msgs)
+
 install(TARGETS
    robot_patrol_node
    service_server_node
    service_test_node
+   patrolling_node
    DESTINATION lib/${PROJECT_NAME}
  )
 

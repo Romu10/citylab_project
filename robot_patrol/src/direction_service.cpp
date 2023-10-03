@@ -80,63 +80,71 @@ private:
         std::vector<std::vector<float>> divided_laser_data(num_sections);
 
         // Message received
-int range_total = request->laser_data.ranges.size();
-RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", range_total);
+        int range_total = request->laser_data.ranges.size();
+        RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", range_total);
 
-// Límites de las secciones
-float front_start = -M_PI / 4.0;
-float front_end = M_PI / 4.0;
-float right_start = -M_PI;
-float right_end = -M_PI / 4.0;
-float left_start = M_PI / 4.0;
-float left_end = M_PI;
+        // Límites de las secciones
+        float front_start = -M_PI / 4.0;
+        float front_end = M_PI / 4.0;
+        float right_start = -M_PI;
+        float right_end = -M_PI / 4.0;
+        float left_start = M_PI / 4.0;
+        float left_end = M_PI;
 
-// Initialize variables to keep track of the minimum ranges and their corresponding angles.
-float min_front_range = std::numeric_limits<float>::max(); // Inicializar con un valor grande.
-float min_front_angle = 0.0;
-float min_right_range = std::numeric_limits<float>::max();
-float min_right_angle = 0.0;
-float min_left_range = std::numeric_limits<float>::max();
-float min_left_angle = 0.0;
+        // Initialize variables to keep track of the minimum ranges and their corresponding angles.
+        float min_front_range = std::numeric_limits<float>::max(); // Inicializar con un valor grande.
+        float min_front_angle = 0.0;
+        float min_right_range = std::numeric_limits<float>::max();
+        float min_right_angle = 0.0;
+        float min_left_range = std::numeric_limits<float>::max();
+        float min_left_angle = 0.0;
 
-// Iterate through the laser scan data within each desired angle range.
-for (size_t i = 0; i < request->laser_data.ranges.size(); ++i) {
-    float angle = request->laser_data.angle_min + i * request->laser_data.angle_increment;
-    float range = request->laser_data.ranges[i];
+        // Iterate through the laser scan data within each desired angle range.
+        for (size_t i = 0; i < request->laser_data.ranges.size(); ++i) {
+            float angle = request->laser_data.angle_min + i * request->laser_data.angle_increment;
+            float range = request->laser_data.ranges[i];
 
-    // Check if the angle falls within the desired range.
-    if (angle >= front_start && angle <= front_end) {
-        // Check if the range is finite (not inf), less than the current minimum range, and within the specified threshold.
-        if (std::isfinite(range) && range < min_front_range && range <= 2) {
-            min_front_range = range;
-            min_front_angle = angle;
+            // Check if the angle falls within the desired range.
+            if (angle >= front_start && angle <= front_end) {
+                // Check if the range is finite (not inf), less than the current minimum range, and within the specified threshold.
+                if (std::isfinite(range) && range < min_front_range && range <= 2) {
+                    min_front_range = range;
+                    min_front_angle = angle;
+                }
+            } else if (angle >= right_start && angle <= right_end) {
+                if (std::isfinite(range) && range < min_right_range && range <= 2) {
+                    min_right_range = range;
+                    min_right_angle = angle;
+                }
+            } else if (angle >= left_start && angle <= left_end) {
+                if (std::isfinite(range) && range < min_left_range && range <= 2) {
+                    min_left_range = range;
+                    min_left_angle = angle;
+                }
+            }
         }
-    } else if (angle >= right_start && angle <= right_end) {
-        if (std::isfinite(range) && range < min_right_range && range <= 2) {
-            min_right_range = range;
-            min_right_angle = angle;
-        }
-    } else if (angle >= left_start && angle <= left_end) {
-        if (std::isfinite(range) && range < min_left_range && range <= 2) {
-            min_left_range = range;
-            min_left_angle = angle;
-        }
-    }
-}
 
-    // Check if a close obstacle was detected in each section.
-    if (min_front_range <= min_right_range && min_front_range <= min_left_range) {
-        response->direction = "Front";
-    } else if (min_right_range <= min_front_range && min_right_range <= min_left_range) {
-        response->direction = "Right";
-    } else if (min_left_range <= min_front_range && min_left_range <= min_right_range) {
-        response->direction = "Left";
-    } else {
-        response->direction = "None";
-    }
+        // Check if a close obstacle was detected in each section.
+        if (min_front_range >= min_right_range && min_front_range >= min_left_range) {
+            response->direction = "Move forward";  // If the front distance is the largest, move forward.
+        } else if (min_right_range >= min_front_range && min_right_range >= min_left_range) {
+            response->direction = "Turn right";  // If the right distance is the largest, move to the right.
+        } else if (min_left_range >= min_front_range && min_left_range >= min_right_range) {
+            response->direction = "Turn left";   // If the left distance is the largest, move to the left.
+        } else {
+            response->direction = "None";   // If there is no clear safer side, do not move.
+        }
 
-    std::string direction_to = response->direction;
-    RCLCPP_INFO(this->get_logger(), "Direction: %s", direction_to.c_str());
+
+        const float total_dist_sec_front = min_front_range; 
+        RCLCPP_INFO(this->get_logger(), "Front Distance: %f", total_dist_sec_front);
+        const float total_dist_sec_right = min_right_range; 
+        RCLCPP_INFO(this->get_logger(), "Right Distance: %f", total_dist_sec_right);
+        const float total_dist_sec_left = min_left_range; 
+        RCLCPP_INFO(this->get_logger(), "Left Distance: %f", total_dist_sec_left);
+
+        std::string direction_to = response->direction;
+        RCLCPP_INFO(this->get_logger(), "Direction: %s", direction_to.c_str());
 
     }
 

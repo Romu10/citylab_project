@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "custom_interfaces/srv/get_direction.hpp"  // Cambia esta inclusión a la de tu servicio personalizado
+#include "custom_interfaces/srv/get_direction.hpp"  
 #include "sensor_msgs/msg/laser_scan.hpp"
 
 #include <chrono>
@@ -8,7 +8,7 @@
 #include <iostream>
 
 using namespace std::chrono_literals;
-using GetDirection = custom_interfaces::srv::GetDirection; // Cambia este alias a tu servicio personalizado
+using GetDirection = custom_interfaces::srv::GetDirection; 
 using LaserScan = sensor_msgs::msg::LaserScan;
 
 bool laser_callback_executed = false;
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("movement_client");
   rclcpp::Client<GetDirection>::SharedPtr client =
-    node->create_client<GetDirection>("/direction_service"); // Cambia el nombre del servicio si es diferente
+    node->create_client<GetDirection>("/direction_service"); 
 
   while (!client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
@@ -61,15 +61,15 @@ int main(int argc, char **argv) {
     // Handle the response based on your service definition
     // You might need to change this part according to your service response structure
     
-    if (result->direction == "Front")
+    if (result->direction == "Move forward")
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Front");
     }
-    else if (result->direction == "Right")
+    else if (result->direction == "Turn right")
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Right");
     }
-    else if (result->direction == "Left")
+    else if (result->direction == "Turn left")
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Left");
     }
