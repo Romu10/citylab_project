@@ -132,7 +132,8 @@ private:
             } else {
                 response->direction = "Left";
         }
-        
+        std::string direction_to = response->direction;
+        RCLCPP_INFO(this->get_logger(), "Direction: %s", direction_to.c_str());
 
         // Total Laser Scan Received Data 
         RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", number_of_rays_received);
@@ -152,8 +153,6 @@ private:
     }
 
 };
-
-
 
 int main(int argc, char * argv[])
 {
