@@ -11,6 +11,8 @@
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  
 
   <exec_depend>sensor_msgs</exec_depend>
 
