@@ -74,81 +74,69 @@ private:
         received_laser_data =  request->laser_data.ranges;
 
         // Defining the number of rays received 
-        int number_of_rays_received = received_laser_data.size();
+        //int number_of_rays_received = received_laser_data.size();
         
         // For Divide the Laser Data Received 
         std::vector<std::vector<float>> divided_laser_data(num_sections);
 
-        for (int i = 0; i < num_sections; ++i){
-            
-            const float startAngle = -angle_per_section / 2.0 + i * angle_per_section;
-            const float endAngle = startAngle + angle_per_section;
+        // Message received
+int range_total = request->laser_data.ranges.size();
+RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", range_total);
 
-            for (int j = 0; j < number_of_rays_received; ++j){
-                
-                float angle = received_laser_data[j];
+// Límites de las secciones
+float front_start = -M_PI / 4.0;
+float front_end = M_PI / 4.0;
+float right_start = -M_PI;
+float right_end = -M_PI / 4.0;
+float left_start = M_PI / 4.0;
+float left_end = M_PI;
 
-                while (angle < -M_PI){
-                    angle += 2.0 * M_PI;
-                }
-                while (angle > M_PI){
-                    angle -= 2.0 * M_PI;
-                }
-                if (angle >= startAngle && angle <= endAngle){
-                    divided_laser_data[i].push_back(received_laser_data[j]);
-                }
-            
-            }
-        
+// Initialize variables to keep track of the minimum ranges and their corresponding angles.
+float min_front_range = std::numeric_limits<float>::max(); // Inicializar con un valor grande.
+float min_front_angle = 0.0;
+float min_right_range = std::numeric_limits<float>::max();
+float min_right_angle = 0.0;
+float min_left_range = std::numeric_limits<float>::max();
+float min_left_angle = 0.0;
+
+// Iterate through the laser scan data within each desired angle range.
+for (size_t i = 0; i < request->laser_data.ranges.size(); ++i) {
+    float angle = request->laser_data.angle_min + i * request->laser_data.angle_increment;
+    float range = request->laser_data.ranges[i];
+
+    // Check if the angle falls within the desired range.
+    if (angle >= front_start && angle <= front_end) {
+        // Check if the range is finite (not inf), less than the current minimum range, and within the specified threshold.
+        if (std::isfinite(range) && range < min_front_range && range <= 2) {
+            min_front_range = range;
+            min_front_angle = angle;
         }
-
-        // Calculate average distances in each section
-        std::vector<float> average_distances(num_sections);
-        for (int i = 0; i < num_sections; ++i) {
-            float sum = 0.0;
-            for (const float& distance : divided_laser_data[i]) {
-                sum += distance;
-                }
-                if (!divided_laser_data[i].empty()) {
-                    average_distances[i] = sum / divided_laser_data[i].size();
-                } else {
-                    average_distances[i] = 0.0;  // No data in this section
-                }
+    } else if (angle >= right_start && angle <= right_end) {
+        if (std::isfinite(range) && range < min_right_range && range <= 2) {
+            min_right_range = range;
+            min_right_angle = angle;
         }
-
-        // Determine which side has the farthest object
-        int farthest_side = 0;  // Initialize to the first section
-        for (int i = 1; i < num_sections; ++i) {
-            if (average_distances[i] > average_distances[farthest_side]) {
-                farthest_side = i;
-            }
+    } else if (angle >= left_start && angle <= left_end) {
+        if (std::isfinite(range) && range < min_left_range && range <= 2) {
+            min_left_range = range;
+            min_left_angle = angle;
         }
+    }
+}
 
-        // Set the response direction based on the farthest side
-        if (farthest_side == 0) {
-                response->direction = "Right";
-            } else if (farthest_side == 1) {
-                response->direction = "Front";
-            } else {
-                response->direction = "Left";
-        }
-        std::string direction_to = response->direction;
-        RCLCPP_INFO(this->get_logger(), "Direction: %s", direction_to.c_str());
+    // Check if a close obstacle was detected in each section.
+    if (min_front_range <= min_right_range && min_front_range <= min_left_range) {
+        response->direction = "Front";
+    } else if (min_right_range <= min_front_range && min_right_range <= min_left_range) {
+        response->direction = "Right";
+    } else if (min_left_range <= min_front_range && min_left_range <= min_right_range) {
+        response->direction = "Left";
+    } else {
+        response->direction = "None";
+    }
 
-        // Total Laser Scan Received Data 
-        RCLCPP_INFO(this->get_logger(), "Total Laser Received: %i", number_of_rays_received);
-        
-        // Total Laser Scan Received Data from Right 
-        int number_of_rays_received_right = divided_laser_data[0].size();
-        RCLCPP_INFO(this->get_logger(), "Total Laser Received Right: %i", number_of_rays_received_right);
-        
-        // Total Laser Scan Received Data from Front
-        int number_of_rays_received_front = divided_laser_data[1].size();
-        RCLCPP_INFO(this->get_logger(), "Total Laser Received Front: %i", number_of_rays_received_front);
-        
-        // Total Laser Scan Received Data from Left
-        int number_of_rays_received_left = divided_laser_data[2].size();
-        RCLCPP_INFO(this->get_logger(), "Total Laser Received Left: %i", number_of_rays_received_left);
+    std::string direction_to = response->direction;
+    RCLCPP_INFO(this->get_logger(), "Direction: %s", direction_to.c_str());
 
     }
 

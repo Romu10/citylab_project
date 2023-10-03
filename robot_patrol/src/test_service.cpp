@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("movement_client");
   rclcpp::Client<GetDirection>::SharedPtr client =
-    node->create_client<GetDirection>("direction_service"); // Cambia el nombre del servicio si es diferente
+    node->create_client<GetDirection>("/direction_service"); // Cambia el nombre del servicio si es diferente
 
   while (!client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
@@ -60,7 +60,12 @@ int main(int argc, char **argv) {
     auto result = result_future.get();
     // Handle the response based on your service definition
     // You might need to change this part according to your service response structure
-    if (result->direction == "Right")
+    
+    if (result->direction == "Front")
+    {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Front");
+    }
+    else if (result->direction == "Right")
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Right");
     }
@@ -69,7 +74,7 @@ int main(int argc, char **argv) {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service returned Left");
     }
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service /moving");
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service /direction_server");
   }
 
   rclcpp::shutdown();
