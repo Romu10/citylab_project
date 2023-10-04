@@ -155,13 +155,20 @@ class GoToPoseClass : public rclcpp::Node
             double current_yaw = current_pos_.theta;
             double desired_yaw = goal->goal_pos.theta;
             
-            double error_percent = 5/100;
+            double error_percent = 10/100;
             double error_percent_linear = 0.080000;
             
             double down_margin = (desired_yaw-(desired_yaw * error_percent));
             double up_margin = (desired_yaw+(desired_yaw * error_percent));
             
             double yaw_difference = calculateYawDifference(current_yaw, desired_yaw);
+            
+            // Ajusta yaw_difference para que esté dentro del rango [-pi, pi]
+            if (yaw_difference > M_PI) {
+                yaw_difference -= 2 * M_PI;
+            } else if (yaw_difference < -M_PI) {
+                yaw_difference += 2 * M_PI;
+            }
             
             double rounded_current_pos_x = std::round(current_pos_.x * 100) / 100.0;
             double rounded_goal_pos_x = std::round(goal->goal_pos.x * 100) / 100.0;
@@ -177,7 +184,7 @@ class GoToPoseClass : public rclcpp::Node
             bool flag_opt = false;
 
             // Inicializa una tasa de bucle de 10 Hz (0.1 segundo)
-            rclcpp::Rate loop_rate(10);
+            rclcpp::Rate loop_rate(20);
 
             // Realiza la acción principal aquí (puede ser un bucle o una secuencia de movimientos)
             
@@ -197,25 +204,49 @@ class GoToPoseClass : public rclcpp::Node
                     return;
                 }
 
-                // Orientate the robot 
-                if (current_yaw < down_margin && current_yaw > up_margin && flag_opt == false) {
-                    RCLCPP_INFO(get_logger(), "Robot Properly Oriented");
-                    flag_opt = true;
-                } 
-                else if (flag_opt == false){
-                    RCLCPP_INFO(get_logger(), "Orienting Robot");
-                    move.linear.x = 0.0;  // Detiene el movimiento lineal
-                    move.angular.z = angular_velocity;
-                    publisher_->publish(move);
-                    flag_opt = true;
-                }
-                
-                RCLCPP_INFO(get_logger(), "Moving Robot Forward");
+                RCLCPP_INFO(get_logger(), "Yaw Difference Gen: %f", yaw_difference);
 
-                // Mueve el robot hacia adelante
-                move.linear.x = linear_velocity;
-                move.angular.z = 0.00;
-                publisher_->publish(move);
+
+                // Orientate the robot 
+                if (std::abs(yaw_difference) > 0.1 && flag_opt == false) {
+                    // Calcula el ángulo de orientación deseado para la posición objetivo actual
+                    desired_yaw = std::atan2(goal->goal_pos.y - current_pos_.y, goal->goal_pos.x - current_pos_.x);
+
+                    // Calcula la diferencia de orientación actualizada
+                    yaw_difference = calculateYawDifference(current_yaw, desired_yaw);
+
+                    RCLCPP_INFO(get_logger(), "Orienting Robot");
+                    RCLCPP_INFO(get_logger(), "Yaw Difference: %f", yaw_difference);
+
+                    move.linear.x = 0.0;  // Detiene el movimiento lineal
+
+                    // Limita la velocidad angular si la diferencia angular es pequeña
+                    if (yaw_difference < 0.00) {
+                        move.angular.z = -0.05;
+                    } else {
+                        move.angular.z = 0.05;
+                    }
+                    
+                    if (std::abs(yaw_difference) < 0.09) {
+                        flag_opt = true;
+                        move.angular.z = 0.0;  // Detiene el movimiento angular
+                    }
+
+                    publisher_->publish(move);
+                } 
+                else if (flag_opt == false) {
+                    // El robot ya está orientado correctamente
+                    flag_opt = true;
+                    RCLCPP_INFO(get_logger(), "Robot Properly Oriented");
+                }
+
+                // Mueve el robot hacia adelante si ya está orientado correctamente
+                if (flag_opt == true) {
+                    RCLCPP_INFO(get_logger(), "Moving Robot Forward");
+                    move.linear.x = linear_velocity;
+                    move.angular.z = 0.0;
+                    publisher_->publish(move);
+                }
 
                 // Publica retroalimentación (feedback)
                 feedback->current_pos = current_pos_;
