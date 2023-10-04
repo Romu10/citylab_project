@@ -101,13 +101,6 @@ class GoToPoseClass : public rclcpp::Node
             return diff;
         }
 
-        // Función para calcular la velocidad angular necesaria para girar hacia la orientación objetivo
-        double calculateAngularVelocity(double current_yaw, double desired_yaw, double max_angular_velocity) {
-            double yaw_difference = calculateYawDifference(current_yaw, desired_yaw);
-            // Ajusta la velocidad angular para controlar la velocidad máxima permitida
-            double angular_velocity = std::min(max_angular_velocity, std::max(-max_angular_velocity, yaw_difference));
-            return angular_velocity;
-        }
 
         rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const GoToPose::Goal> goal)
         {
@@ -148,18 +141,10 @@ class GoToPoseClass : public rclcpp::Node
             // Inicializa una variable de velocidad lineal
             double linear_velocity = 0.2;  // 0.2 m/s
             
-            // Calcula la diferencia de orientación entre current_pos_ y desired_pos_
-            double max_angular_velocity = 0.49; 
-            double stop_linear_velocity = 0.00;
-            
             double current_yaw = current_pos_.theta;
             double desired_yaw = goal->goal_pos.theta;
             
-            double error_percent = 10/100;
             double error_percent_linear = 0.080000;
-            
-            double down_margin = (desired_yaw-(desired_yaw * error_percent));
-            double up_margin = (desired_yaw+(desired_yaw * error_percent));
             
             double yaw_difference = calculateYawDifference(current_yaw, desired_yaw);
             
@@ -177,23 +162,19 @@ class GoToPoseClass : public rclcpp::Node
             
             double difference_x = std::abs(rounded_current_pos_x - rounded_goal_pos_x);
             double difference_y = std::abs(rounded_current_pos_y - rounded_goal_pos_y);
-            
-            // Calcula la velocidad angular necesaria para girar hacia la orientación objetivo
-            double angular_velocity = calculateAngularVelocity(current_yaw, desired_yaw, max_angular_velocity);
 
             bool flag_opt = false;
 
             // Inicializa una tasa de bucle de 10 Hz (0.1 segundo)
             rclcpp::Rate loop_rate(20);
 
-            // Realiza la acción principal aquí (puede ser un bucle o una secuencia de movimientos)
-            
-             RCLCPP_INFO(get_logger(), "Current X: %f",rounded_current_pos_x);
-             RCLCPP_INFO(get_logger(), "Goal X: %f",rounded_goal_pos_x);
-             RCLCPP_INFO(get_logger(), "Current Y: %f",rounded_current_pos_y);
-             RCLCPP_INFO(get_logger(), "Goal Y: %f",rounded_goal_pos_y);
-             RCLCPP_INFO(get_logger(), "Difference X: %f",difference_x);
-             RCLCPP_INFO(get_logger(), "Difference Y: %f",difference_y);
+            // Realiza la acción principal aquí (puede ser un bucle o una secuencia de movimientos)            
+            RCLCPP_INFO(get_logger(), "Current X: %f",rounded_current_pos_x);
+            RCLCPP_INFO(get_logger(), "Goal X: %f",rounded_goal_pos_x);
+            RCLCPP_INFO(get_logger(), "Current Y: %f",rounded_current_pos_y);
+            RCLCPP_INFO(get_logger(), "Goal Y: %f",rounded_goal_pos_y);
+            RCLCPP_INFO(get_logger(), "Difference X: %f",difference_x);
+            RCLCPP_INFO(get_logger(), "Difference Y: %f",difference_y);
 
             while ((difference_x > error_percent_linear || difference_y > error_percent_linear) && rclcpp::ok()) {
                 // Comprueba si se ha solicitado la cancelación
@@ -222,9 +203,9 @@ class GoToPoseClass : public rclcpp::Node
 
                     // Limita la velocidad angular si la diferencia angular es pequeña
                     if (yaw_difference < 0.00) {
-                        move.angular.z = -0.05;
+                        move.angular.z = -0.1;
                     } else {
-                        move.angular.z = 0.05;
+                        move.angular.z = 0.1;
                     }
                     
                     if (std::abs(yaw_difference) < 0.09) {
