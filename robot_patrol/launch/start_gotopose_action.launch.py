@@ -5,6 +5,6 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='robot_patrol',
-            executable='service_test_node',
+            executable='go_to_pose_node',
             output='screen'),
     ])
